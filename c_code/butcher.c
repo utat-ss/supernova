@@ -15,7 +15,7 @@ void butcher(double*** a, double** b, double** c, char filename[], int* num) {
 
     // PREAMBLE
     int lines = 0;
-    char ch;
+    
     // scan number of lines
     while(!feof(fp)) if(fgetc(fp) == '\n') lines++;
     rewind(fp); // rewind
@@ -25,9 +25,9 @@ void butcher(double*** a, double** b, double** c, char filename[], int* num) {
     int n = lines-1;
     *num = n; // assign length
 
-    *a = calloc(n, sizeof(double*));
-    *b = calloc(n, sizeof(double));
-    *c = calloc(n, sizeof(double));
+    *a = malloc(n * sizeof(double*));
+    *b = malloc(n * sizeof(double));
+    *c = malloc(n * sizeof(double));
 
     // BUTCHER TABLE CONSTRUCTION
     // first row of butcher table
@@ -47,7 +47,7 @@ void butcher(double*** a, double** b, double** c, char filename[], int* num) {
         (*c)[i] = f1/f2; // parse c coefficient
 
         // prepare list for a coefficients in this row
-        (*a)[i] = calloc(i, sizeof(double));
+        (*a)[i] = malloc(i * sizeof(double));
 
         for (int j = 0; j < i; j++) {
             fscanf(fp, " %f/%f", &f1, &f2);

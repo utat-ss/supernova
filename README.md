@@ -15,10 +15,17 @@ The Butcher module interprets Butcher tables and feeds them into the RK solver t
 ## Physics
 Supernova defines functions for gravitational attraction of the Earth, with perturbation effects coming soon.
 
-## Plotter (Python)
-A simple python script is provided to visualize the results of the integration.
+### Orbit
+Accepts input for initial orbit state vector.
 
+## Python interface
+Supernova can be compiled as a `.so` shared library, and imported into Python as `ctypes` for easy interfacing between the programs.
 
+### Plotter
+A simple Python script is provided to visualize the results of the integration.
+
+# Building
+Run the makefile. `make program` for C, and `make python` for the Python interface. Enjoy!
 
 
 

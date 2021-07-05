@@ -1,7 +1,9 @@
 #include <math.h>
 
-const double G = 6.67e-11;
-const double M_e = 5.98e24;
+const double GM = 3.986004405e14;
+const double R_e = 6.378137e6;
+const double J2 = 1.08262668e-3;
+const double flat = 1/298.257;
 
 void earth_gravity(double t, double u[], int m, double* output) {
     /*
@@ -19,6 +21,28 @@ void earth_gravity(double t, double u[], int m, double* output) {
         output[i] = u[i+3];
 
         // v' = -GM r / |r|^3
-        output[i+3] = -G*M_e * u[i] / mag_r3;
+        output[i+3] = -GM * u[i] / mag_r3;
     }
+}
+
+void J2_accel(double t, double u[], int m, double* output) {
+    // J2 Perturbation, from Curtis 12.30
+    double mag_r = sqrt(u[0]*u[0] + u[1]*u[1] + u[2]*u[2]);
+    double factor = (3.0/2.0) * J2 * GM * R_e * R_e / pow(mag_r, 5);
+
+    output[3] = factor * u[0] * (5 * u[2] * u[2] / (mag_r * mag_r) - 1);
+    output[4] = factor * u[1] * (5 * u[2] * u[2] / (mag_r * mag_r) - 1);
+    output[5] = factor * u[2] * (5 * u[2] * u[2] / (mag_r * mag_r) - 3);
+}
+
+void combined_perturbations(double t, double u[], int m, double* output) {
+    double temp[6]; // temporary variable to store J2 perturbation effects
+
+    // 1. Earth Gravity
+    earth_gravity(t, u, m, output);
+
+    // 2. J2 effect
+    J2_accel(t, u, m, temp);
+
+    for (int i = 3; i < 6; i++) output[i] += temp[i];
 }
