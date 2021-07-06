@@ -1,11 +1,11 @@
 # Supernova 🌟
-Supernova is an orbit propagator coded in C for the purpose of accelerating calculations, both on the ground and abord the FINCH spacecraft.
+Supernova is an orbit propagator coded in C for the purpose of accelerating calculations, both on the ground and aboard the FINCH spacecraft.
 
 Supernova propagates orbits using Cowell's method, integrating Newton's laws.
 
 # Components
 ## Solvers
-Supernova uses a custom arbitrary explicit Runge-Kutta method to solve vector valued ordinary differential equations. The solver accepts [Butcher Tableaus](https://en.wikipedia.org/wiki/Runge%E2%80%93Kutta_methods#Explicit_Runge%E2%80%93Kutta_methods) as definitions of different solver types.
+Supernova uses a configurable explicit Runge-Kutta method to solve vector valued ordinary differential equations. The solver accepts [Butcher Tableaus](https://en.wikipedia.org/wiki/Runge%E2%80%93Kutta_methods#Explicit_Runge%E2%80%93Kutta_methods) as definitions of different solver types.
 
 Supernova implements an 8th order method as outlined in [this book, p.288](https://ntrs.nasa.gov/archive/nasa/casi.ntrs.nasa.gov/19760017203.pdf), which is on par with what is available with `scipy.solve_ivp`.
 

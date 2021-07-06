@@ -32,4 +32,4 @@ def plot_trajectory(filename: str):
 
 
 if __name__ == "__main__":
-    plot_trajectory("./results/RK8.csv")
+    plot_trajectory("c_code/RK45.csv")
