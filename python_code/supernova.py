@@ -24,7 +24,7 @@ def wrap_func(lib, funcname, restype, argtypes):
 
 
 orbit = wrap_func(supernova, "orbit", None,
-                  [c_int, POINTER(c_double), c_char_p, c_char_p])
+                  [POINTER(c_double), POINTER(c_double), c_char_p, c_int, c_char_p, c_double])
 # Define function from supernova C in Python
 
 '''
@@ -55,13 +55,14 @@ print(orb)
 Propagate using supernova
 '''
 # Initial conditions
+py_tSpan = [0, 86400 * 30]
+tSpan = (c_double * len(py_tSpan))(*py_tSpan)
 py_y0 = [*(orb.r.value*1000), *(orb.v.value*1000)]
 print("inputs rr vv:", py_y0)
 y0 = (c_double * len(py_y0))(*py_y0)
 
 t = time.perf_counter()
-orbit(100000, y0,
-      "./c_code/tables/RK8.txt".encode("utf-8"), "./results/RK8.csv".encode("utf-8"))
-print(f"Propagation Completed in time: {time.perf_counter() - t}s")
+orbit(tSpan, y0,
+      "./c_code/tables/RKF56.txt".encode("utf-8"), 5, "RKF56.csv".encode("utf-8"), 1e-2)
 
-plotter.plot_trajectory("./results/RK8.csv")
+plotter.plot_trajectory("RKF56.csv")

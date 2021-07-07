@@ -4,7 +4,6 @@
 #include "butcher.h"
 #include "solvers.h"
 
-const double ATOL = 1e-3; // tolerance
 const double H0 = 20; // initial step
 
 double* euler(double (*f)(double, double), double* t, double y0, int n) {
@@ -140,7 +139,7 @@ double** RKvec(void (*f)(double, double[], int, double*), double* t, double y0[]
 
 }
 
-solution* RKvec_adaptive(void (*f)(double, double[], int, double*), double tSpan[], double y0[], int m, int ord, char fname[]) {
+solution* RKvec_adaptive(void (*f)(double, double[], int, double*), double tSpan[], double y0[], int m, int ord, char fname[], double ATOL) {
     /*
     Integrates along time points using a butcher formatted RK method using n timesteps on a vector of dimension m
 
@@ -150,6 +149,7 @@ solution* RKvec_adaptive(void (*f)(double, double[], int, double*), double tSpan
     m: dimension of vector
     ord: order of method
     fname: integrator filename
+    ATOL: tolerance
     */
 
     if (tSpan[1] <= tSpan[0]) return NULL; // error case
@@ -184,7 +184,8 @@ solution* RKvec_adaptive(void (*f)(double, double[], int, double*), double tSpan
     double* y_i = malloc(m * sizeof(double)); // function inputs at each step
     for (int i = 0; i <= s; i++) k[i] = malloc(m * sizeof(double)); // init k values
 
-    double* ee = malloc(m * sizeof(double)); // temporary solution for error term
+    double* sol1 = malloc(m * sizeof(double)); // temporary solution for error term
+    double* sol2 = malloc(m * sizeof(double)); // temporary solution for error term
     double err; // magnitude of error
 
     /////// INTEGRATION STEPS
@@ -195,28 +196,38 @@ solution* RKvec_adaptive(void (*f)(double, double[], int, double*), double tSpan
 
         // Perform all RK Stages [1, s)
         for (int r = 1; r < s; r++) {
-
             // Prepare input vector
             for (int j = 0; j < m; j++) {
                 y_i[j] = result->y[step][j];    
-                for (int w = 0; w < r; w++) y_i[j] += h * k[w][j] * a[r][w]; // Add previous steps
+                for (int w = 0; w < r; w++) {
+                    y_i[j] += h * k[w][j] * a[r][w]; // Add previous steps
+
+                    //if (j == 0) printf("RK Weight for stage %d is %f\n", w+1, a[r][w]);
+                } 
             }
             f(t + h * c[r], y_i, m, k[r]); // evaluate next k
         } 
 
         // Calculate error
         for (int j = 0; j < m; j++) {
-            ee[j] = 0; // zero out vector from last time     
-            // Add all weights
-            for (int r = 0; r < s; r++) ee[j] += h * (b1[r]-b2[r]) * k[r][j];
+            sol1[j] = 0; // zero out vector from last time
+            sol2[j] = 0;
         }
+        for (int j = 0; j < m; j++) {
+            // Add all weights
+            for (int r = 0; r < s; r++) {
+                sol1[j] += h * b1[r] * k[r][j];
+                sol2[j] += h * b2[r] * k[r][j];
+            }
+        }
+        //printf("Sol1: %f %f   Sol2: %f %f \n", sol1[0], sol1[1], sol2[0], sol2[1]);
 
         // Determine RMS error of vector
         err = 0;
-        for (int j = 0; j < m; j++) err += ee[j] * ee[j];
+        for (int j = 0; j < m; j++) err += pow(sol1[j] - sol2[j], 2);
         err = pow(err, 0.5);
 
-        printf("Step %d, Error: %f Stepsize: %f\n", step, err, h);
+        //printf("Step %d, Error: %f Stepsize: %f\n", step, err, h);
 
         //// Step size adjustment
         // Determine new step size
@@ -239,7 +250,7 @@ solution* RKvec_adaptive(void (*f)(double, double[], int, double*), double tSpan
             for (int j = 0; j < m; j++) {
                 result->y[step+1][j] = result->y[step][j];     
                 // Add all weights
-                for (int r = 0; r <= s; r++) result->y[step+1][j] += h * b1[r] * k[r][j];
+                for (int r = 0; r < s; r++) result->y[step+1][j] += h * b1[r] * k[r][j];
             }
             step++; // advance step
             t += h_old; // advance time

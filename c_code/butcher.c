@@ -92,7 +92,7 @@ void butcher_adaptive(double*** a, double** b1, double** b2, double** c, char fi
     int n = lines-2; // since last two rows are sums
     *num = n; // assign length
 
-    printf("Stages: %d\n", n);
+    printf("Integrator Loaded. Name: %s Stages: %d\n", filename, n);
 
     *a = malloc(n * sizeof(double*));
     *b1 = malloc(n * sizeof(double));

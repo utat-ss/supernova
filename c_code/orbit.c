@@ -4,7 +4,7 @@
 #include "physics.h"
 #include <time.h>
 
-void orbit(double tSpan[], double y0[], char integrator[], int ord, char output[]) {
+void orbit(double tSpan[], double y0[], char integrator[], int ord, char output[], double ATOL) {
     /*
     tSpan: t0, tf of times.
     y0: initial x y z vx vy vz state vector
@@ -15,7 +15,7 @@ void orbit(double tSpan[], double y0[], char integrator[], int ord, char output[
     clock_t start, end;
 
     start = clock();
-    solution* result = RKvec_adaptive(combined_perturbations, tSpan, y0, 6, ord, integrator);
+    solution* result = RKvec_adaptive(combined_perturbations, tSpan, y0, 6, ord, integrator, ATOL);
     end = clock();
     double cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC;
 
