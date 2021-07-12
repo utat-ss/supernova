@@ -5,18 +5,13 @@ Supernova propagates orbits using Cowell's method, integrating Newton's laws.
 
 # Components
 ## Solvers
-Supernova uses a configurable explicit Runge-Kutta method to solve vector valued ordinary differential equations. The solver accepts [Butcher Tableaus](https://en.wikipedia.org/wiki/Runge%E2%80%93Kutta_methods#Explicit_Runge%E2%80%93Kutta_methods) as definitions of different solver types.
-
-Supernova implements an 8th order method as outlined in [this book, p.288](https://ntrs.nasa.gov/archive/nasa/casi.ntrs.nasa.gov/19760017203.pdf), which is on par with what is available with `scipy.solve_ivp`.
-
-### Butcher
-The Butcher module interprets Butcher tables and feeds them into the RK solver to specify the steps being taken by the solver.
+Supernova uses an [adaptive 10th order method](https://sce.uhcl.edu/feagin/courses/rk10.pdf) with an truncation error estimate of eigth order called RK810. It outperforms an equivalent DOP853 based Python solver by a factor of 100x in terms of runtime. 
 
 ## Physics
-Supernova defines functions for gravitational attraction of the Earth, with perturbation effects coming soon.
+Supernova defines functions for gravitational attraction of the Earth, with advanced perturbation effects coming soon. Currently, only J2 is supported.
 
 ### Orbit
-Accepts input for initial orbit state vector.
+Accepts input for initial orbit state vector and serves as a wrapper for the RK810 solver.
 
 ## Python interface
 Supernova can be compiled as a `.so` shared library, and imported into Python as `ctypes` for easy interfacing between the programs.

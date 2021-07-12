@@ -1,147 +1,15 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
-#include "butcher.h"
 #include "solvers.h"
 
 const double H0 = 20; // initial step
 
-double* euler(double (*f)(double, double), double* t, double y0, int n) {
-    // Integrates from one side of the interval to another using Euler's method
-    // f: function for which y' = f(t, y)
-    // t: evaluation points
-    // y0: initial condition
-    // n: number of steps
 
-    double* result = malloc(n * sizeof(double));
-
-    if (n <= 1) return NULL; // error case
-
-    double dt;
-    double deriv;
-
-    result[0] = y0;
-
-    for (int step = 1; step < n; step++) {
-        // Euler Step
-        // // y_n = y_n-1 + f(t-1, y_n-1) * dt
-
-        dt = t[step] - t[step-1];        
-        deriv = f(t[step-1], result[step-1]);
-
-        result[step] = result[step-1] + deriv * dt;
-    }
-
-    return result;
-}
-
-double* RK4(double (*f)(double, double), double* t, double y0, int n) {
-    // Integrates from one side of the interval to another using RK4 method
-    // f: function for which y' = f(t, y)
-    // t: evaluation points
-    // y0: initial condition
-    // n: number of steps
-
-    double* result = malloc(n * sizeof(double));
-
-    if (n <= 1) return NULL; // error case
-
-    double dt, k1, k2, k3, k4;
-
-    result[0] = y0;
-
-    for (int step = 0; step < n-1; step++) {
-        // RK Step
-
-        dt = t[step+1] - t[step];
-        k1 = f(t[step], result[step]);
-        k2 = f(t[step] + dt/2, result[step] + dt*k1/2);
-        k3 = f(t[step] + dt/2, result[step] + dt*k2/2);
-        k4 = f(t[step] + dt, result[step] + dt*k3);
-
-        result[step+1] = result[step] + (k1 + 2*k2 + 2*k3 + k4)*dt/6;
-    }
-
-    return result;
-
-}
-
-double** RKvec(void (*f)(double, double[], int, double*), double* t, double y0[], int m, int n, char fname[]) {
+solution* RK810vec(void (*f)(double, double[], int, double*), double tSpan[], double y0[], int m, double ATOL) {
     /*
-    Integrates along time points using a butcher formatted RK method using n timesteps on a vector of dimension m
-
-    t: evaluation points
-    y0: array of length m containing initial conditions
-    m, n: dimensions of vector, number of timesteps
-    f: function for which y' = f(t, y, m, ARR), where m is size, and ARR stores the resulting vector
-    */
-
-    if (n <= 1) return NULL; // error case
-
-    ////// Allocate result array
-    double** result = malloc(n * sizeof(double*));
-    for (int i = 0; i < n; i++) result[i] = malloc(m * sizeof(double));
-
-    ////// Prepare Step variables
-    double h; // stepsize
-
-    // Read RK Step Parameters
-    double** a;
-    double *b, *c;
-    int s; // number of RK steps
-    butcher(&a, &b, &c, fname, &s);
-
-    // Create Step Variables
-    double** k = malloc((s+1) * sizeof(double*)); // k values
-    double* y_i = malloc(m * sizeof(double)); // function inputs at each step
-
-    for (int i = 0; i <= s; i++) k[i] = malloc(m * sizeof(double)); // init k values
-    
-    // Init y0
-    for (int j = 0; j < m; j++) result[0][j] = y0[j];
-
-    /////// INTEGRATION STEPS
-    for (int i = 0; i < n-1; i++) {
-        h = t[i+1] - t[i]; // stepsize
-
-        // RK Step 0
-        f(t[i], result[i], m, k[0]);
-
-        // Perform all RK Steps [1, s]
-        for (int r = 1; r <= s; r++) {
-            // Prepare input vector
-            for (int j = 0; j < m; j++) {
-                y_i[j] = result[i][j];
-
-                // Add previous steps
-                for (int w = 0; w < r; w++) y_i[j] += h * k[w][j] * a[r][w];
-            }
-            // evaluate next k
-            f(t[i] + h * c[r], y_i, m, k[r]);
-        }      
-
-        // Append to result
-        for (int j = 0; j < m; j++) {
-            result[i+1][j] = result[i][j];     
-            // Add all weights
-            for (int r = 0; r <= s; r++) result[i+1][j] += h * b[r] * k[r][j];
-        }
-    }
-
-    ////// Free memory
-    for (int i = 0; i < s; i++) {
-        free(k[i]);
-    }
-    free(k);
-    free(y_i);
-
-    return result;
-
-}
-
-solution* RKvec_adaptive(void (*f)(double, double[], int, double*), double tSpan[], double y0[], int m, int ord, char fname[], double ATOL) {
-    /*
-    Integrates along time points using a butcher formatted RK method using n timesteps on a vector of dimension m
+    Integrates along time points using an RK810 method using n timesteps on a vector of dimension m
+    Source: https://sce.uhcl.edu/feagin/courses/rk10.pdf
 
     f: function for which y' = f(t, y, m, ARR), where m is dimension of the vector, and ARR stores the resulting vector
     tSpan: stores (t0, tf)
@@ -166,80 +34,75 @@ solution* RKvec_adaptive(void (*f)(double, double[], int, double*), double tSpan
 
     ////// Prepare Step variables
     double h = H0; // initial stepsize
-    double h_old;
+    double h_old; // previous step variable
     double t = tSpan[0]; // intial time
 
     // Init y0, t0 (step 0)
     for (int j = 0; j < m; j++) result->y[0][j] = y0[j];
     result->t[0] = t;
 
-    // Read RK Step Parameters
-    double** a;
-    double *b1, *b2, *c;
-    int s; // number of RK stages in the method
-    butcher_adaptive(&a, &b1, &b2, &c, fname, &s);
+    // RK Step Parameters from https://sce.uhcl.edu/rungekutta/rk108.txt
+    // a coefficients (written at beta in the paper) [intermediate solution weights]
+    double a[17][16] ={
+    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0.1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {-0.9151765613752915, 1.4545344021782731, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0.20225919030111816, 0.0, 0.6067775709033545, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0.18402471470864357, 0.0, 0.19796683122719236, -0.07295478473136326, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0.08790073402066813, 0.0, 0.0, 0.41045970252026065, 0.4827137536788665, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0.08597005049024603, 0.0, 0.0, 0.3308859630407222, 0.4896629573094502, -0.07318563750708508, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0.12093044912533372, 0.0, 0.0, 0.0, 0.2601246757582956, 0.032540262154909134, -0.0595780211817361, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0.11085437958039149, 0.0, 0.0, 0.0, 0.0, -0.06057614882550056, 0.3217637056017784, 0.510485725608063, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0.112054414752879, 0.0, 0.0, 0.0, 0.0, -0.14494277590286592, -0.3332697190962567, 0.4992692295568801, 0.5095046089296861, 0, 0, 0, 0, 0, 0, 0},
+    {0.11397678396418598, 0.0, 0.0, 0.0, 0.0, -0.07688133642033569, 0.23952736032439065, 0.3977746623680946, 0.010755895687360746, -0.3277691241640189, 0, 0, 0, 0, 0, 0},
+    {0.07983145282801961, 0.0, 0.0, 0.0, 0.0, -0.052032968680060306, -0.05769541461685489, 0.19478191571210415, 0.14538492318832508, -0.07829427103516708, -0.11450329936109892, 0, 0, 0, 0, 0},
+    {0.9851156101648573, 0.0, 0.0, 0.3308859630407222, 0.4896629573094502, -1.3789648657484357, -0.8611641950276356, 5.784288136375372, 3.2880776198510357, -2.386339050931364, -3.254793424836439, -2.16343541686423, 0, 0, 0, 0},
+    {0.8950802957716328, 0.0, 0.19796683122719236, -0.07295478473136326, 0.0, -0.8512362396620076, 0.3983201123185333, 3.639372631810356, 1.5482287703983033, -2.122217147040537, -1.5835039854532618, -1.7156160828593627, -0.024403640575012746, 0, 0, 0},
+    {-0.9151765613752915, 1.4545344021782731, 0.0, 0.0, -0.7773336436449683, 0.0, -0.0910895662155176, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0910895662155176, 0.7773336436449683, 0, 0},
+    {0.1, 0.0, -0.15717866579977116, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.15717866579977116, 0},{0.1817813007000953, 0.675, 0.3427581598471898, 0.0, 0.25911121454832275, -0.35827896671795206, -1.0459489594088331, 0.930327845415627, 1.7795095943170811, 0.1, -0.2825475695390441, -0.15932735011997254, -0.14551589464700151, -0.25911121454832275, -0.3427581598471898, -0.675}};
+    
+    // c coefficients (written as a in the paper) [intermediate timestep values]
+    double c[17] = { 0.000000000000000000000000000000000000000000000000000000000000,0.100000000000000000000000000000000000000000000000000000000000,0.539357840802981787532485197881302436857273449701009015505500,0.809036761204472681298727796821953655285910174551513523258250,0.309036761204472681298727796821953655285910174551513523258250,0.981074190219795268254879548310562080489056746118724882027805,0.833333333333333333333333333333333333333333333333333333333333,0.354017365856802376329264185948796742115824053807373968324184,0.882527661964732346425501486979669075182867844268052119663791,0.642615758240322548157075497020439535959501736363212695909875,0.357384241759677451842924502979560464040498263636787304090125,0.117472338035267653574498513020330924817132155731947880336209,0.833333333333333333333333333333333333333333333333333333333333,0.309036761204472681298727796821953655285910174551513523258250,0.539357840802981787532485197881302436857273449701009015505500,0.100000000000000000000000000000000000000000000000000000000000,1.00000000000000000000000000000000000000000000000000000000000};
+
+    // b coefficeints (written as c in the paper) [solution weights]
+    double b[17] = {0.0333333333333333333333333333333333333333333333333333333333333,0.0250000000000000000000000000000000000000000000000000000000000,0.0333333333333333333333333333333333333333333333333333333333333,0.000000000000000000000000000000000000000000000000000000000000,0.0500000000000000000000000000000000000000000000000000000000000,0.000000000000000000000000000000000000000000000000000000000000,0.0400000000000000000000000000000000000000000000000000000000000,0.000000000000000000000000000000000000000000000000000000000000,0.189237478148923490158306404106012326238162346948625830327194,0.277429188517743176508360262560654340428504319718040836339472,0.277429188517743176508360262560654340428504319718040836339472,0.189237478148923490158306404106012326238162346948625830327194,-0.0400000000000000000000000000000000000000000000000000000000000,-0.0500000000000000000000000000000000000000000000000000000000000,-0.0333333333333333333333333333333333333333333333333333333333333,-0.0250000000000000000000000000000000000000000000000000000000000,0.0333333333333333333333333333333333333333333333333333333333333};
+    int s = 17;
 
     // Create Step Variables
-    double** k = malloc((s+1) * sizeof(double*)); // k values
+    double** k = malloc(s * sizeof(double*)); // k values
     double* y_i = malloc(m * sizeof(double)); // function inputs at each step
-    for (int i = 0; i <= s; i++) k[i] = malloc(m * sizeof(double)); // init k values
+    for (int i = 0; i < s; i++) k[i] = malloc(m * sizeof(double)); // init k values
 
-    double* sol1 = malloc(m * sizeof(double)); // temporary solution for error term
-    double* sol2 = malloc(m * sizeof(double)); // temporary solution for error term
     double err; // magnitude of error
 
     /////// INTEGRATION STEPS
     while (t-h < tSpan[1]) {
-
-        // RK Stage 0
-        f(t, result->y[step], m, k[0]);
+        f(t, result->y[step], m, k[0]); // RK Stage 0
 
         // Perform all RK Stages [1, s)
         for (int r = 1; r < s; r++) {
             // Prepare input vector
             for (int j = 0; j < m; j++) {
                 y_i[j] = result->y[step][j];    
-                for (int w = 0; w < r; w++) {
-                    y_i[j] += h * k[w][j] * a[r][w]; // Add previous steps
-
-                    //if (j == 0) printf("RK Weight for stage %d is %f\n", w+1, a[r][w]);
-                } 
+                for (int w = 0; w < r; w++) y_i[j] += h * k[w][j] * a[r][w]; // Add previous steps
             }
             f(t + h * c[r], y_i, m, k[r]); // evaluate next k
-        } 
-
-        // Calculate error
-        for (int j = 0; j < m; j++) {
-            sol1[j] = 0; // zero out vector from last time
-            sol2[j] = 0;
         }
-        for (int j = 0; j < m; j++) {
-            // Add all weights
-            for (int r = 0; r < s; r++) {
-                sol1[j] += h * b1[r] * k[r][j];
-                sol2[j] += h * b2[r] * k[r][j];
-            }
-        }
-        //printf("Sol1: %f %f   Sol2: %f %f \n", sol1[0], sol1[1], sol2[0], sol2[1]);
 
-        // Determine RMS error of vector
+        // Calculate error using error estimate formula from paper
+        // take abs value of all errors as convervative estimate
         err = 0;
-        for (int j = 0; j < m; j++) err += pow(sol1[j] - sol2[j], 2);
-        err = pow(err, 0.5);
-
-        //printf("Step %d, Error: %f Stepsize: %f\n", step, err, h);
+        for (int j = 0; j < m; j++) err += fabs(1.0/360.0 * h * (k[1][j] - k[15][j]));
 
         //// Step size adjustment
         // Determine new step size
         h_old = h;
-        h = 0.9 * h * pow(ATOL/err, 1./((float) ord)); // next step size
+        h = 0.9 * h * pow(ATOL/err, 1.0/9.0); // next step size (based on ninth order local error)
 
         if (err < ATOL) {
-            // step within tolerance
-
-            // check array size
+            /// step within tolerance, append solution
+            // check array size and increase size if needed
             if ((step + 1) >= n) {
-                // reallocate array if needed
                 n *= 2;
                 result->y = realloc(result->y, n * sizeof(double*));
                 result->t = realloc(result->t, n * sizeof(double));
@@ -249,8 +112,7 @@ solution* RKvec_adaptive(void (*f)(double, double[], int, double*), double tSpan
             // Append to result
             for (int j = 0; j < m; j++) {
                 result->y[step+1][j] = result->y[step][j];     
-                // Add all weights
-                for (int r = 0; r < s; r++) result->y[step+1][j] += h * b1[r] * k[r][j];
+                for (int r = 0; r < s; r++) result->y[step+1][j] += h_old * b[r] * k[r][j]; // Add all weights
             }
             step++; // advance step
             t += h_old; // advance time
@@ -258,8 +120,7 @@ solution* RKvec_adaptive(void (*f)(double, double[], int, double*), double tSpan
         }
         // Otherwise, retry step
     }
-
-    // record # of steps
+    // record # of steps after finish
     result->n = step;
 
     ////// Free memory

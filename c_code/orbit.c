@@ -4,22 +4,22 @@
 #include "physics.h"
 #include <time.h>
 
-void orbit(double tSpan[], double y0[], char integrator[], int ord, char output[], double ATOL) {
+void orbit(double tSpan[], double y0[], char output[], double ATOL) {
     /*
+    Propagates orbit using RK810 solver.
     tSpan: t0, tf of times.
     y0: initial x y z vx vy vz state vector
-    integrator: path to a butcher tableau eg. ./tables/RK8.txt
-    ord: order of integrator eg. 5
     output: filename of output csv data file
+    ATOL: tolerance
     */
     clock_t start, end;
 
     start = clock();
-    solution* result = RKvec_adaptive(combined_perturbations, tSpan, y0, 6, ord, integrator, ATOL);
+    solution* result = RK810vec(combined_perturbations, tSpan, y0, 6, ATOL);
     end = clock();
     double cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC;
 
-    printf("Integration completed in %f seconds. Steps taken: %d", cpu_time_used, result->n);
+    printf("Integration using RK810 solver completed in %.8f seconds. Steps taken: %d\n", cpu_time_used, result->n);
 
     FILE *fptr = fopen(output, "w");
 

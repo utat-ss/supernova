@@ -7,9 +7,6 @@ typedef struct AdaptiveSolution {
     int n; // number of steps taken
 } solution;
 
-double* euler(double (*f)(double, double), double* t, double y0, int n);
-double* RK4(double (*f)(double, double), double* t, double y0, int n);
-solution* RKvec_adaptive(void (*f)(double, double[], int, double*), double tSpan[], double y0[], int m, int ord, char fname[], double ATOL);
-double** RKvec(void (*f)(double, double[], int, double*), double* t, double y0[], int m, int n, char fname[]);
+solution* RK810vec(void (*f)(double, double[], int, double*), double tSpan[], double y0[], int m, double ATOL);
 
 #endif
