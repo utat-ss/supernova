@@ -1,3 +1,5 @@
 .vscode
 *.pyc
 *.exe
+*.csv
+*.so

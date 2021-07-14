@@ -1,12 +1,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "orbit.h"
+#include "solvers.h"
 
 int main(void) {
     double y0[6] = {(6378 + 500)*1e3, 0, 0, 0, 7.5e3, 0};
-    double tSpan[2] = {0, 100000};
+    double tSpan[2] = {0, 1000};
     double tol = 1e-12;
-    orbit(tSpan, y0, "RK810.csv", tol);
+    orbitgeneral(RK1012vec, tSpan, y0, "RK1012.csv", tol);
+    orbitgeneral(RK810vec, tSpan, y0, "RK810.csv", tol);
+    
 
 	return 0;
 }

@@ -8,5 +8,6 @@ typedef struct AdaptiveSolution {
 } solution;
 
 solution* RK810vec(void (*f)(double, double[], double*), double tSpan[], double y0[], double ATOL);
+solution* RK1012vec(void (*f)(double, double[], double*), double tSpan[], double y0[], double ATOL);
 
 #endif
