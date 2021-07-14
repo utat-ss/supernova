@@ -7,6 +7,6 @@ typedef struct AdaptiveSolution {
     int n; // number of steps taken
 } solution;
 
-solution* RK810vec(void (*f)(double, double[], int, double*), double tSpan[], double y0[], int m, double ATOL);
+solution* RK810vec(void (*f)(double, double[], double*), double tSpan[], double y0[], double ATOL);
 
 #endif

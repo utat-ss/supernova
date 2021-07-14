@@ -11,8 +11,6 @@ def plot_trajectory(*filenames: str):
     for i in range(3):
         axes.append(fig.add_subplot(131 + i))
         axes[i].add_patch(earth[i])
-        axes[i].set_ylabel("y position (m)")
-        axes[i].set_xlabel("x position (m)")
         axes[i].set_aspect("equal")
         axes[i].grid()
 
@@ -22,13 +20,40 @@ def plot_trajectory(*filenames: str):
         y = arr[:, 2]
         z = arr[:, 3]
         axes[0].plot(x, y, label=filename)
+        axes[0].set_ylabel("y position (m)")
+        axes[0].set_xlabel("x position (m)")
         axes[1].plot(y, z, label=filename)
+        axes[1].set_ylabel("z position (m)")
+        axes[1].set_xlabel("y position (m)")
         axes[2].plot(x, z, label=filename)
+        axes[2].set_ylabel("z position (m)")
+        axes[2].set_xlabel("x position (m)")
         axes[0].set_title("xy")
         axes[1].set_title("yz")
         axes[2].set_title("xz")
 
     plt.legend()
+    plt.show()
+
+
+def plot_error(diff: np.ndarray):
+    fig = plt.figure(figsize=(18, 7), tight_layout=True)
+
+    axes = []
+
+    for i in range(3):
+        axes.append(fig.add_subplot(131 + i))
+        axes[i].set_ylabel("Solver Error (m)")
+        axes[i].set_xlabel("Integrator Step Number")
+        axes[i].grid()
+
+    for i in range(3):
+        axes[i].plot(diff[:, i])
+
+    axes[0].set_title("x error")
+    axes[1].set_title("y error")
+    axes[2].set_title("z error")
+
     plt.show()
 
 

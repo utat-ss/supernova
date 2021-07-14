@@ -15,7 +15,7 @@ void orbit(double tSpan[], double y0[], char output[], double ATOL) {
     clock_t start, end;
 
     start = clock();
-    solution* result = RK810vec(combined_perturbations, tSpan, y0, 6, ATOL);
+    solution* result = RK810vec(combined_perturbations, tSpan, y0, ATOL);
     end = clock();
     double cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC;
 

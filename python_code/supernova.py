@@ -59,12 +59,15 @@ def get_orbit():
     return orb
 
 
-def compare_propagators():
+def compare_propagators(days: int):
     # Initial conditions
-    py_tSpan = [0, 86400 * 10]
+    py_tSpan = [0, 86400 * days]
     tSpan = (c_double * len(py_tSpan))(*py_tSpan)
 
+    t_start = time.perf_counter()
     orb = get_orbit()
+    t_orb = time.perf_counter()-t_start
+    print(f"parameter fetch completion in {t_orb} seconds.")
     py_y0 = [*(orb.r.value*1000), *(orb.v.value*1000)]
     y0 = (c_double * len(py_y0))(*py_y0)
 
@@ -86,8 +89,10 @@ def compare_propagators():
     arrPoli = np.loadtxt("poliastro.csv", delimiter=",")
     diff = arr[:, 1:4] - arrPoli[:, 1:]
     print(f"RMS error between Supernova and Poliastro is {np.sqrt(np.average(diff**2))} metres across {len(ref_times)} steps.")
+    print(f"Max error between Supernova and Poliastro is {np.max(np.abs(diff))} metres across {len(ref_times)} steps.")
 
     plotter.plot_trajectory("FINCH.csv", "poliastro.csv")
+    plotter.plot_error(np.abs(diff))
 
 
 def propagate_orbit(days: int):
@@ -105,4 +110,4 @@ def propagate_orbit(days: int):
 
 
 if __name__ == "__main__":
-    compare_propagators()
+    compare_propagators(10)

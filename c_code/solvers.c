@@ -2,16 +2,16 @@
 #include <stdio.h>
 #include <math.h>
 #include "solvers.h"
+#define VEC_SIZE 6
+#define H0 60 // initial step
 
-const double H0 = 20; // initial step
 
-
-solution* RK810vec(void (*f)(double, double[], int, double*), double tSpan[], double y0[], int m, double ATOL) {
+solution* RK810vec(void (*f)(double, double[], double*), double tSpan[], double y0[], double ATOL) {
     /*
     Integrates along time points using an RK810 method using n timesteps on a vector of dimension m
     Source: https://sce.uhcl.edu/feagin/courses/rk10.pdf
 
-    f: function for which y' = f(t, y, m, ARR), where m is dimension of the vector, and ARR stores the resulting vector
+    f: function for which y' = f(t, y, ARR), where ARR stores the resulting vector
     tSpan: stores (t0, tf)
     y0: array of length m containing initial conditions
     m: dimension of vector
@@ -30,7 +30,7 @@ solution* RK810vec(void (*f)(double, double[], int, double*), double tSpan[], do
     solution* result = (solution*) malloc(sizeof(solution));
     result->y = malloc(n * sizeof(double*));
     result->t = malloc(n * sizeof(double));
-    for (int i = 0; i < n; i++) result->y[i] = malloc(m * sizeof(double));
+    for (int i = 0; i < n; i++) result->y[i] = malloc(VEC_SIZE * sizeof(double));
 
     ////// Prepare Step variables
     double h = H0; // initial stepsize
@@ -38,7 +38,7 @@ solution* RK810vec(void (*f)(double, double[], int, double*), double tSpan[], do
     double t = tSpan[0]; // intial time
 
     // Init y0, t0 (step 0)
-    for (int j = 0; j < m; j++) result->y[0][j] = y0[j];
+    for (int j = 0; j < VEC_SIZE; j++) result->y[0][j] = y0[j];
     result->t[0] = t;
 
     // RK Step Parameters from https://sce.uhcl.edu/rungekutta/rk108.txt
@@ -66,33 +66,34 @@ solution* RK810vec(void (*f)(double, double[], int, double*), double tSpan[], do
 
     // b coefficeints (written as c in the paper) [solution weights]
     double b[17] = {0.0333333333333333333333333333333333333333333333333333333333333,0.0250000000000000000000000000000000000000000000000000000000000,0.0333333333333333333333333333333333333333333333333333333333333,0.000000000000000000000000000000000000000000000000000000000000,0.0500000000000000000000000000000000000000000000000000000000000,0.000000000000000000000000000000000000000000000000000000000000,0.0400000000000000000000000000000000000000000000000000000000000,0.000000000000000000000000000000000000000000000000000000000000,0.189237478148923490158306404106012326238162346948625830327194,0.277429188517743176508360262560654340428504319718040836339472,0.277429188517743176508360262560654340428504319718040836339472,0.189237478148923490158306404106012326238162346948625830327194,-0.0400000000000000000000000000000000000000000000000000000000000,-0.0500000000000000000000000000000000000000000000000000000000000,-0.0333333333333333333333333333333333333333333333333333333333333,-0.0250000000000000000000000000000000000000000000000000000000000,0.0333333333333333333333333333333333333333333333333333333333333};
-    int s = 17;
 
     // Create Step Variables
-    double** k = malloc(s * sizeof(double*)); // k values
-    double* y_i = malloc(m * sizeof(double)); // function inputs at each step
-    for (int i = 0; i < s; i++) k[i] = malloc(m * sizeof(double)); // init k values
+    double k[17][VEC_SIZE]; // k values
+    double y_i[VEC_SIZE]; // function inputs at each step
+    double y_curr[VEC_SIZE]; // current solution array, and also used to update itself for next step
 
     double err; // magnitude of error
 
     /////// INTEGRATION STEPS
     while (t-h < tSpan[1]) {
-        f(t, result->y[step], m, k[0]); // RK Stage 0
+        for (int j = 0; j < VEC_SIZE; j++) y_curr[j] = result->y[step][j]; // get current y (for vectorization purposes)
+
+        f(t, y_curr, k[0]); // RK Stage 0
 
         // Perform all RK Stages [1, s)
-        for (int r = 1; r < s; r++) {
-            // Prepare input vector
-            for (int j = 0; j < m; j++) {
-                y_i[j] = result->y[step][j];    
+        for (int r = 1; r < 17; r++) {
+            //// Prepare input vector
+            for (int j = 0; j < VEC_SIZE; j++) {             
+                y_i[j] = y_curr[j]; // take current sol      
                 for (int w = 0; w < r; w++) y_i[j] += h * k[w][j] * a[r][w]; // Add previous steps
             }
-            f(t + h * c[r], y_i, m, k[r]); // evaluate next k
+            f(t + h * c[r], y_i, k[r]); // evaluate next k
         }
 
         // Calculate error using error estimate formula from paper
         // take abs value of all errors as convervative estimate
         err = 0;
-        for (int j = 0; j < m; j++) err += fabs(1.0/360.0 * h * (k[1][j] - k[15][j]));
+        for (int j = 0; j < VEC_SIZE; j++) err += fabs(1.0/360.0 * h * (k[1][j] - k[15][j]));
 
         //// Step size adjustment
         // Determine new step size
@@ -106,14 +107,15 @@ solution* RK810vec(void (*f)(double, double[], int, double*), double tSpan[], do
                 n *= 2;
                 result->y = realloc(result->y, n * sizeof(double*));
                 result->t = realloc(result->t, n * sizeof(double));
-                for (int i = step + 1; i < n; i++) result->y[i] = malloc(m * sizeof(double));
+                for (int i = step + 1; i < n; i++) result->y[i] = malloc(VEC_SIZE * sizeof(double));
             }
 
             // Append to result
-            for (int j = 0; j < m; j++) {
-                result->y[step+1][j] = result->y[step][j];     
-                for (int r = 0; r < s; r++) result->y[step+1][j] += h_old * b[r] * k[r][j]; // Add all weights
+            for (int j = 0; j < VEC_SIZE; j++) {
+                for (int r = 0; r < 17; r++) y_curr[j] += h_old * b[r] * k[r][j]; // Add all weights
             }
+            for (int j = 0; j < VEC_SIZE; j++) result->y[step+1][j] = y_curr[j]; // write (separated for vectorization)
+
             step++; // advance step
             t += h_old; // advance time
             result->t[step] = t; // record time
@@ -122,11 +124,6 @@ solution* RK810vec(void (*f)(double, double[], int, double*), double tSpan[], do
     }
     // record # of steps after finish
     result->n = step;
-
-    ////// Free memory
-    for (int i = 0; i < s; i++) free(k[i]);
-    free(k);
-    free(y_i);
 
     return result;
 }
