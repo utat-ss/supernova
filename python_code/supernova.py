@@ -27,7 +27,8 @@ def wrap_func(lib, funcname, restype, argtypes):
 
 
 orbit = wrap_func(supernova, "orbit", None,
-                  [POINTER(c_double), POINTER(c_double), c_char_p, c_double])
+                  [c_char_p, POINTER(c_double), POINTER(c_double),
+                   c_char_p, c_double])
 # Define function from supernova C in Python
 
 
@@ -72,7 +73,7 @@ def compare_propagators(days: int):
     y0 = (c_double * len(py_y0))(*py_y0)
 
     t_start = time.perf_counter()
-    orbit(tSpan, y0, "FINCH.csv".encode("utf-8"), 1e-4)
+    orbit("RK810".encode("utf-8"), tSpan, y0, "FINCH.csv".encode("utf-8"), 1e-4)
     t_C = time.perf_counter()-t_start
     print(f"Supernova completion in {t_C} seconds.")
 
@@ -104,10 +105,10 @@ def propagate_orbit(days: int):
     py_y0 = [*(orb.r.value*1000), *(orb.v.value*1000)]
     y0 = (c_double * len(py_y0))(*py_y0)
 
-    orbit(tSpan, y0, "FINCH.csv".encode("utf-8"), 1e-4)
+    orbit("RK810".encode("utf-8"), tSpan, y0, "FINCH.csv".encode("utf-8"), 1e-12)
 
     plotter.plot_trajectory("FINCH.csv")
 
 
 if __name__ == "__main__":
-    compare_propagators(10)
+    compare_propagators(30)
