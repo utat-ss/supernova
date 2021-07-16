@@ -8,4 +8,4 @@ debug:
 	gcc -o main main.c -O3 -Wall -g -Wall -lm
 
 python:
-	gcc -fPIC -shared -o ../python_code/supernova.so orbit.h -O3 -lm -fopt-info-vec
+	gcc -fPIC -shared -o ../python_code/supernova.so main.c -O3 -lm -fopt-info-vec
