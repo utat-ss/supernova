@@ -111,4 +111,4 @@ def propagate_orbit(days: int):
 
 
 if __name__ == "__main__":
-    compare_propagators(30)
+    compare_propagators(10)

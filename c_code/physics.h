@@ -5,11 +5,13 @@
 #define R_e 6.378137e6
 #define J2 1.08262668e-3
 #include <math.h>
+#include "vecmath.h"
 
 // Physics models
 // operates on 6D state vector
+const double earthomega[3] = {0, 0, 72.9211e-6};
 
-void combined_perturbations(double t, double u[], double* output) {
+void combined_perturbations(double t, double u[6], double output[6]) {
     /*
     force model on spacecraft
     t: time, not used
@@ -19,6 +21,9 @@ void combined_perturbations(double t, double u[], double* output) {
     double mag_r = sqrt(u[0]*u[0] + u[1]*u[1] + u[2]*u[2]);
     double factor = (3.0/2.0) * GM * R_e * R_e * J2 / pow(mag_r, 5);
     //double mag_v = sqrt(u[3]*u[3] + u[4]*u[4] + u[5]*u[5]);
+
+    //double atmvel[3];
+    //cross(u, earthomega, atmvel);
 
     // 0. Velocity update
     for (int i = 0; i < 3; i++) output[i] = u[i+3];
