@@ -9,3 +9,6 @@ debug:
 
 python:
 	gcc -fPIC -shared -o ../python_code/supernova.so main.c -O3 -lm -fopt-info-vec
+
+test:
+	gcc -o main testvec.c -Wall -lm

@@ -8,7 +8,7 @@
 
 typedef struct AdaptiveSolution {
     double* t; // timesteps
-    double** y; // function value
+    double (*y)[VEC_SIZE]; // function value
     int n; // number of steps taken
 } solution;
 
@@ -28,15 +28,14 @@ solution* RK810vec(void (*f)(double, double[], double*), double tSpan[], double 
 
     if (tSpan[1] <= tSpan[0]) return NULL; // error case
 
-    ////// Initial estimate for n
+    ////// Initial estimate for n = number of rows in solution
     int n = (int)((tSpan[1] - tSpan[0])/H0810); // 1 step every 10 seconds
     int step = 0;
 
     ////// Allocate result struct
     solution* result = (solution*) malloc(sizeof(solution));
-    result->y = malloc(n * sizeof(double*));
+    result->y = malloc(n * sizeof(double[VEC_SIZE]));
     result->t = malloc(n * sizeof(double));
-    for (int i = 0; i < n; i++) result->y[i] = malloc(VEC_SIZE * sizeof(double));
 
     ////// Prepare Step variables
     double h = H0810; // initial stepsize
@@ -110,10 +109,9 @@ solution* RK810vec(void (*f)(double, double[], double*), double tSpan[], double 
             /// step within tolerance, append solution
             // check array size and increase size if needed
             if ((step + 1) >= n) {
-                n *= 2;
-                result->y = realloc(result->y, n * sizeof(double*));
+                n *= 2; // double size of array and reallocate memory
+                result->y = realloc(result->y, n * sizeof(double[VEC_SIZE]));
                 result->t = realloc(result->t, n * sizeof(double));
-                for (int i = step + 1; i < n; i++) result->y[i] = malloc(VEC_SIZE * sizeof(double));
             }
 
             // Append to result
@@ -156,9 +154,9 @@ solution* RK1012vec(void (*f)(double, double[], double*), double tSpan[], double
 
     ////// Allocate result struct
     solution* result = (solution*) malloc(sizeof(solution));
-    result->y = malloc(n * sizeof(double*));
+    result->y = malloc(n * sizeof(double[VEC_SIZE]));
     result->t = malloc(n * sizeof(double));
-    for (int i = 0; i < n; i++) result->y[i] = malloc(VEC_SIZE * sizeof(double));
+
 
     ////// Prepare Step variables
     double h = H01012; // initial stepsize
@@ -239,10 +237,9 @@ solution* RK1012vec(void (*f)(double, double[], double*), double tSpan[], double
             /// step within tolerance, append solution
             // check array size and increase size if needed
             if ((step + 1) >= n) {
-                n *= 2;
-                result->y = realloc(result->y, n * sizeof(double*));
+                n *= 2; // double size of array and reallocate memory
+                result->y = realloc(result->y, n * sizeof(double[VEC_SIZE]));
                 result->t = realloc(result->t, n * sizeof(double));
-                for (int i = step + 1; i < n; i++) result->y[i] = malloc(VEC_SIZE * sizeof(double));
             }
 
             // Append to result
