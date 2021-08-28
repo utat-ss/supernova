@@ -5,10 +5,12 @@ Supernova propagates orbits using Cowell's method, integrating Newton's laws.
 
 # Components
 ## Solvers
-Supernova uses an [adaptive 10th order method](https://sce.uhcl.edu/feagin/courses/rk10.pdf) with an truncation error estimate of eigth order called RK810. It outperforms an equivalent DOP853 based Python solver by a factor of 100x in terms of runtime. 
+Supernova uses an [adaptive 10th order method](https://sce.uhcl.edu/feagin/courses/rk10.pdf) with an truncation error estimate of eigth order called RK810. It outperforms an equivalent DOP853 based Python solver by a factor of 100x in terms of runtime when tested using only J2 perturbations.
 
 ## Physics
-Supernova defines functions for gravitational attraction of the Earth, with advanced perturbation effects coming soon. Currently, only J2 is supported.
+Supernova defines functions for gravitational attraction of the Earth, with advanced perturbation effects coming soon. Currently, only J2 and atmospheric drag are supported.
+
+Aero characteristics are currently hard-coded for FINCH (drag coefficient = 2.2, Area to mass ratio = 0.01 m^2 / kg)
 
 ### Orbit
 Accepts input for initial orbit state vector and serves as a wrapper for the RK810 solver.
