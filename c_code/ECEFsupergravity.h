@@ -76,7 +76,7 @@ void JGM_gravity(double t, double u[6], double output[6]) {
     // S_n,m = CS(m-1,n);
 
     // m = 0 accelerations
-    for (int n = 1; n < JGM3SIZE; n++) {
+    for (int n = 0; n < JGM3SIZE; n++) {
         accel[0] += GM / (R_e * R_e) * (-CS[n][0] * V[n+1][1]);
         accel[1] += GM / (R_e * R_e) * (-CS[n][0] * W[n+1][1]);
 
