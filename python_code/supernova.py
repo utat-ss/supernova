@@ -33,9 +33,11 @@ def wrap_func(lib, funcname, restype, argtypes):
 
 
 orbit = wrap_func(supernova, "orbitPTR", POINTER(AdaptiveSolution),
-                  [c_char_p, POINTER(c_double), POINTER(c_double),
+                  [c_char_p, c_char_p, POINTER(c_double), POINTER(c_double),
                    c_double])
-# Define function from supernova C in Python
+state = wrap_func(supernova, "stateFromKeplerian", POINTER(c_double),
+                  [c_double, c_double, c_double, c_double, c_double, c_double])
+# Define functions from supernova C in Python
 
 
 if __name__ == "__main__":
@@ -51,7 +53,7 @@ if __name__ == "__main__":
 
     y0 = (c_double * len(py_y0))(*py_y0)
 
-    solution: POINTER(AdaptiveSolution) = orbit("RK810".encode("utf-8"), tSpan, y0, 1e-12)
+    solution: POINTER(AdaptiveSolution) = orbit("RK810".encode("utf-8"), "simplified".encode("utf-8"), tSpan, y0, 1e-12)
 
     n = solution[0].n  # Dereference pointer
     print(f"Steps taken: {n}")

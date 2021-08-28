@@ -1,5 +1,7 @@
-#ifndef PHYSICS_H
-#define PHYSICS_H
+// Force model for Supernova
+
+#ifndef FORCES_H
+#define FORCES_H
 
 // Aero configuration (static in code for now)
 #define CD 2.2
@@ -12,12 +14,14 @@
 #include <math.h>
 #include "constants.h"
 #include "vecmath.h"
+#include "gravity.h"
 
 // Physics models
 // operates on 6D state vector
 
 double atmosphere(double z) {
     // Atmospheric density based on Curtis D.41
+    // Model: US Standard 76
     double h[] = {0, 25e3, 30e3, 40e3, 50e3, 60e3, 70e3, 80e3, 90e3, 100e3, 110e3, 120e3, 130e3, 140e3, 150e3, 180e3, 200e3, 250e3, 300e3, 350e3, 400e3, 450e3, 500e3, 600e3, 700e3, 800e3, 900e3, 1000};
     // geometric heights in m
     
@@ -38,7 +42,7 @@ double atmosphere(double z) {
     return r[i] * exp(-(z-h[i])/H[i]);
 }
 
-void combined_perturbations(double t, double u[6], double output[6]) {
+void simplified_perturbations(double t, double u[6], double output[6]) {
     /*
     force model on spacecraft
     t: time, not used
@@ -80,6 +84,43 @@ void combined_perturbations(double t, double u[6], double output[6]) {
         output[i] -= 0.5 * rho * CD * Am * mag_v_rel * v_rel[i-3];
         //printf("Acceleration from drag in direction %d: %.10f m/s^2\t", i-3, -0.5 * rho * CD * Am * mag_v_rel * v_rel[i-3]);
     }
+    #endif
+    
+    return;
+}
+
+void advanced_perturbations(double t, double u[6], double output[6]) {
+    /*
+    advanced force model on spacecraft
+    t: time, not used
+    u: vector of size 6 containing x y z vx vy vz
+    output: vector of size m which stores x' y' z' vx' vy' vz'
+    */
+    double mag_r = sqrt(u[0]*u[0] + u[1]*u[1] + u[2]*u[2]);  // distance of spacecraft from centre of Earth
+
+    // 0. Velocity update
+    for (int i = 0; i < 3; i++) output[i] = u[i+3];
+
+    // 1. JGM3 Gravity
+    double ECEF[3];
+    double Q[3][3];
+    double accel[3] = {0, 0, 0}; // store temporary accel in ECEF
+    ECI2ECEF(t, Q); // get conversion matrix ECI -> ECEF
+    matXvec(Q, u, ECEF);
+    JGM_gravity(t, ECEF, accel);
+    ECEF2ECI(t, Q); // conversrion ECEF -> ECI
+    matXvec(Q, accel, output+3); // Accelerations in ECI
+    
+    
+    #if AERO_ON == 1
+    // 2. Atmospheric Drag
+    // from Curtis 12.12
+    double v_rel[3] = {u[3]+u[1]*W_e, u[4]-W_e*u[0], u[5]};
+    // determine atmospheric velocity and subsequent relative velocity by subtracting atmospheric velocity
+
+    double mag_v_rel = sqrt(v_rel[0]*v_rel[0] + v_rel[1]*v_rel[1] + v_rel[2]*v_rel[2]);  // magnitude of relative velocity
+    double rho = atmosphere(mag_r-R_e); // atmospheric density at altitude
+    for (int i = 3; i < 6; i++) output[i] -= 0.5 * rho * CD * Am * mag_v_rel * v_rel[i-3];
     #endif
     
     return;

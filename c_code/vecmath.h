@@ -1,7 +1,8 @@
+// Vector Math Utilities for Supernova
+
 #ifndef VECMATH_H
 #define VECMATH_H
 
-// Vector Math Utilities for Supernova
 #include <math.h>
 #include <stdio.h>
 #include "constants.h"

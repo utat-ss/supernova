@@ -1,16 +1,20 @@
+// High level interface functions
+
 #ifndef ORBIT_H
 #define ORBIT_H
+
 #include "solvers.h"
-#include "physics.h"
+#include "forces.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <time.h>
 #include <string.h>
 
-void orbit(char solver[], double tSpan[], double y0[], char output[], double ATOL) {
+void orbit(char solver[], char model[], double tSpan[], double y0[], char output[], double ATOL) {
     /*
     Propagates orbit using solver of choice.
     solver: name, either "RK810" or "RK1012"
+    model: perturbation model, either "simplified" or "advanced"
     tSpan: t0, tf of times.
     y0: initial x y z vx vy vz state vector
     output: filename of output csv data file
@@ -20,8 +24,18 @@ void orbit(char solver[], double tSpan[], double y0[], char output[], double ATO
     solution* result;
 
     start = clock();
-    if (!strcmp(solver, "RK810")) result = RK810vec(combined_perturbations, tSpan, y0, ATOL);
-    else if (!strcmp(solver, "RK1012")) result = RK1012vec(combined_perturbations, tSpan, y0, ATOL);
+
+    void (*f)(double, double *, double *);
+
+    if (!strcmp(model, "simplified")) f = simplified_perturbations;
+    else if (!strcmp(model, "advanced")) f = advanced_perturbations;
+    else {
+        printf("Invalid model chosen. Pick either 'simplified' or 'advanced'\n");
+        return;
+    }
+
+    if (!strcmp(solver, "RK810")) result = RK810vec(f, tSpan, y0, ATOL);
+    else if (!strcmp(solver, "RK1012")) result = RK1012vec(f, tSpan, y0, ATOL);
     else {
         printf("Invalid solver chosen.\n");
         return;
@@ -42,20 +56,52 @@ void orbit(char solver[], double tSpan[], double y0[], char output[], double ATO
     free(result);
 }
 
-solution* orbitPTR(char solver[], double tSpan[], double y0[], double ATOL) {
+solution* orbitPTR(char solver[], char model[], double tSpan[], double y0[], double ATOL) {
     /*
     Propagates orbit using solver of choice and returns pointer to solution
     solver: name, either "RK810" or "RK1012"
+    model: perturbation model, either "simplified" or "advanced"
     tSpan: t0, tf of times.
     y0: initial x y z vx vy vz state vector
     ATOL: tolerance
     */
-    if (!strcmp(solver, "RK810")) return RK810vec(combined_perturbations, tSpan, y0, ATOL);
-    else if (!strcmp(solver, "RK1012")) return RK1012vec(combined_perturbations, tSpan, y0, ATOL);
+    void (*f)(double, double *, double *);
+
+    if (!strcmp(model, "simplified")) f = simplified_perturbations;
+    else if (!strcmp(model, "advanced")) f = advanced_perturbations;
     else {
-        printf("Invalid solver chosen.\n");
+        printf("Invalid model chosen. Pick either 'simplified' or 'advanced'\n");
         return NULL;
     }
+
+    if (!strcmp(solver, "RK810")) return RK810vec(f, tSpan, y0, ATOL);
+    else if (!strcmp(solver, "RK1012")) return RK1012vec(f, tSpan, y0, ATOL);
+    else {
+        printf("Invalid solver chosen. Pick either 'RK810' or 'RK1012'\n");
+        return NULL;
+    }
+}
+
+double* stateFromKeplerian(double sma, double ecc, double inc, double raan, double aop, double m) {
+    // Initial ECI position/velocity using Keplerian elements
+
+    double (*q)[3] = QpX(aop, inc, raan); // Perifocal to ECI matrix
+    double* Perifocal_pos_vel = PFE(sma, ecc, inc, aop, m);
+    // Perifocal coordinates
+
+    static double y0[6];
+    // Static memory (yeah I know it's gonna cause a memory leak, will fix later)
+
+    double ECI_position[3];
+    double ECI_vel[3];
+    matXvec(q, Perifocal_pos_vel, ECI_position);
+    matXvec(q, Perifocal_pos_vel+3, ECI_vel);
+
+    for (int i = 0; i < 3; i++) {
+        y0[i] = ECI_position[i];
+        y0[i+3] = ECI_vel[i];
+    }
+    return y0;
 }
 
 #endif

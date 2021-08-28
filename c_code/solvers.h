@@ -1,5 +1,8 @@
+// Numerical Runge Kutta Solvers for Supernova
+
 #ifndef SOLVERS_H
 #define SOLVERS_H
+
 #define VEC_SIZE 6 // dimension of vector (kept static at 6 for orbit prop)
 #define H0810 60 // initial step
 #define H01012 120 // initial step

@@ -1,7 +1,9 @@
-#ifndef ECEFsupergraVity_H
-#define ECEFsupergraVity_H
+// Gravity model used by Supernova
 
-// size of graVity model
+#ifndef GRAVITY_H
+#define GRAVITY_H
+
+// number of gravity terms to take (2-21)
 #define JGM3SIZE 21
 
 #include <stdlib.h>
@@ -9,7 +11,6 @@
 #include <math.h>
 #include "constants.h"
 #include "vecmath.h"
-#include "JGM3Constants.h"
 
 typedef struct HarmonicMatrices {
     double (*V)[JGM3SIZE+1];
@@ -17,14 +18,13 @@ typedef struct HarmonicMatrices {
 } harmonicmatrices;
 
 // for propagation in ECEF coordinates
-harmonicmatrices* VW(double u[]) {
-
+harmonicmatrices* VW(double r[3]) {
     harmonicmatrices* mats = (harmonicmatrices*) malloc(sizeof(harmonicmatrices));
 
     // Variables to make it easier
-    double x = u[0];
-    double y = u[1];
-    double z = u[2];
+    double x = r[0];
+    double y = r[1];
+    double z = r[2];
     double r2 = x*x + y*y + z*z; // square of magnitude of position
 
     // Initialize arrays
@@ -64,13 +64,14 @@ harmonicmatrices* VW(double u[]) {
     
 }
 
-void JGM_gravity(double t, double u[6], double output[6]) {
-    harmonicmatrices* h = VW(u);
+void JGM_gravity(double t, double r[3], double accel[3]) {
+    // Gravitational acceleration vector for spacecraft in ECEF coordinates
+    // accelerations vector will be modified directly
+
+    harmonicmatrices* h = VW(r);
 
     double (*V)[JGM3SIZE+1] = h->V;
     double (*W)[JGM3SIZE+1] = h->W;
-
-    double accel[3]; // accelerations
 
     // C_n,m = CS(n,m);
     // S_n,m = CS(m-1,n);
@@ -93,6 +94,28 @@ void JGM_gravity(double t, double u[6], double output[6]) {
             accel[2] += GM / (R_e * R_e) * ((n-m+1) * (-CS[n][m] * V[n+1][m] - CS[m-1][n] * W[n+1][m]));
         }
     }
+
+    //printVec(accel);
+
+    free(V);
+    free(W);
+    free(h);
+}
+
+void J2_gravity(double t, double r[6], double accel[3]) {
+    // accelerations vector will be modified directly
+
+    double mag_r = sqrt(r[0]*r[0] + r[1]*r[1] + r[2]*r[2]);  // distance of spacecraft from centre of Earth
+    double factor = (3.0/2.0) * GM * R_e * R_e * J2 / pow(mag_r, 5); // J2 Factor
+
+    // 1. Earth Gravity
+    for (int i = 0; i < 3; i++) accel[i] = -GM * r[i] / (mag_r * mag_r * mag_r); // v' = -GM r / |r|^3
+
+    // 2. J2 effect
+    // J2 Perturbation, from Curtis 12.30
+    accel[0] += factor * r[0] * (5 * r[2] * r[2] / (mag_r * mag_r) - 1);
+    accel[1] += factor * r[1] * (5 * r[2] * r[2] / (mag_r * mag_r) - 1);
+    accel[2] += factor * r[2] * (5 * r[2] * r[2] / (mag_r * mag_r) - 3);
 
     printVec(accel);
 
