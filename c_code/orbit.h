@@ -50,13 +50,12 @@ solution* orbitPTR(char solver[], double tSpan[], double y0[], double ATOL) {
     y0: initial x y z vx vy vz state vector
     ATOL: tolerance
     */
-    solution* result;
-    if (!strcmp(solver, "RK810")) result = RK810vec(combined_perturbations, tSpan, y0, ATOL);
-    else if (!strcmp(solver, "RK1012")) result = RK1012vec(combined_perturbations, tSpan, y0, ATOL);
+    if (!strcmp(solver, "RK810")) return RK810vec(combined_perturbations, tSpan, y0, ATOL);
+    else if (!strcmp(solver, "RK1012")) return RK1012vec(combined_perturbations, tSpan, y0, ATOL);
     else {
         printf("Invalid solver chosen.\n");
+        return NULL;
     }
-    return result;
 }
 
 #endif

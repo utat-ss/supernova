@@ -1,11 +1,10 @@
 #ifndef VECMATH_H
 #define VECMATH_H
 
-// vector math library
+// Vector Math Utilities for Supernova
 #include <math.h>
 #include <stdio.h>
-#define PI 	3.14159265358979323846
-#define GM 3.986004405e14
+#include "constants.h"
 
 void cross(double A[3], double B[3], double U[3]) {
     // Crosses vectors A and B then stores result in vector U
@@ -45,6 +44,9 @@ void transpose(double (*A)[3]) {
     }
 }
 
+/*
+Specialty Matrices
+*/
 
 double (*QXp(double aop, double inc, double raan))[3] {
     // ECI to Perifocal matrix
@@ -88,6 +90,46 @@ double (*QpX(double aop, double inc, double raan))[3] {
     matrix[1][2] = -cos(raan) * sin(inc);
     matrix[2][2] = cos(inc);
     return matrix;
+}
+
+void ECI2ECEF(double jd, double (*matrix)[3]) {
+    // ECI to ECEF matrix, given time in Julian
+
+    // Get Earth rotation angle given time using Celest algorithm.
+    // https://github.com/JaiWillems/Celest/blob/develop-v0.2.0/celest/satellite/coordinate.py
+    double ERA = -fmod(6.30038748702467 * (jd - 2451545) + 4.895, 2*PI);
+
+    matrix[0][0] = cos(ERA);
+    matrix[0][1] = -sin(ERA);
+    matrix[0][2] = 0;
+
+    matrix[1][0] = sin(ERA);
+    matrix[1][1] = cos(ERA);
+    matrix[1][2] = 0;
+
+    matrix[2][0] = 0;
+    matrix[2][1] = 0;
+    matrix[2][2] = 0;
+
+}
+
+void ECEF2ECI(double jd, double (*matrix)[3]) {
+    // ECEF to ECI matrix, given time in Julian
+
+    double ERA = fmod(6.30038748702467 * (jd - 2451545) + 4.895, 2*PI);
+
+    matrix[0][0] = cos(ERA);
+    matrix[0][1] = -sin(ERA);
+    matrix[0][2] = 0;
+
+    matrix[1][0] = sin(ERA);
+    matrix[1][1] = cos(ERA);
+    matrix[1][2] = 0;
+
+    matrix[2][0] = 0;
+    matrix[2][1] = 0;
+    matrix[2][2] = 0;
+
 }
 
 double* PFE(double a, double e, double i, double aop, double m) {
