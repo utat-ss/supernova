@@ -15,7 +15,7 @@ void orbit(char solver[], char model[], double tSpan[], double y0[], char output
     Propagates orbit using solver of choice.
     solver: name, either "RK810" or "RK1012"
     model: perturbation model, either "simplified" or "advanced"
-    tSpan: t0, tf of times.
+    tSpan: t0, tf of times in seconds.
     y0: initial x y z vx vy vz state vector
     output: filename of output csv data file
     ATOL: tolerance

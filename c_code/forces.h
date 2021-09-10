@@ -92,11 +92,13 @@ void simplified_perturbations(double t, double u[6], double output[6]) {
 void advanced_perturbations(double t, double u[6], double output[6]) {
     /*
     advanced force model on spacecraft
-    t: time, not used
+    t: mission elapsed time in seconds
     u: vector of size 6 containing x y z vx vy vz
     output: vector of size m which stores x' y' z' vx' vy' vz'
     */
+
     double mag_r = sqrt(u[0]*u[0] + u[1]*u[1] + u[2]*u[2]);  // distance of spacecraft from centre of Earth
+    double curr_jd = t/86400;
 
     // 0. Velocity update
     for (int i = 0; i < 3; i++) output[i] = u[i+3];
@@ -105,10 +107,10 @@ void advanced_perturbations(double t, double u[6], double output[6]) {
     double ECEF[3];
     double Q[3][3];
     double accel[3] = {0, 0, 0}; // store temporary accel in ECEF
-    ECI2ECEF(t, Q); // get conversion matrix ECI -> ECEF
+    ECI2ECEF(curr_jd, Q); // get conversion matrix ECI -> ECEF
     matXvec(Q, u, ECEF);
     JGM_gravity(t, ECEF, accel);
-    ECEF2ECI(t, Q); // conversrion ECEF -> ECI
+    ECEF2ECI(curr_jd, Q); // conversrion ECEF -> ECI
     matXvec(Q, accel, output+3); // Accelerations in ECI
     
     
