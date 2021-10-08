@@ -82,6 +82,14 @@ solution* orbitPTR(char solver[], char model[], double tSpan[], double y0[], dou
     }
 }
 
+double* nextStatefromCurrent(double x, double y, double z, double vx, double vy, double vz, double h) {
+    // Advance forward in your orbit by h seconds.
+    double* state =  malloc(6 * sizeof(double));
+    double y0[6] = {x, y, z, vx, vy, vz};
+    RK1012Step(simplified_perturbations, h, y0, state);
+    return state;
+}
+
 double* stateFromKeplerian(double sma, double ecc, double inc, double raan, double aop, double m) {
     // Initial ECI position/velocity using Keplerian elements
 
@@ -89,8 +97,7 @@ double* stateFromKeplerian(double sma, double ecc, double inc, double raan, doub
     double* Perifocal_pos_vel = PFE(sma, ecc, inc, aop, m);
     // Perifocal coordinates
 
-    static double y0[6];
-    // Static memory (yeah I know it's gonna cause a memory leak, will fix later)
+    double* y0 = malloc(6 * sizeof(double));
 
     double ECI_position[3];
     double ECI_vel[3];
@@ -102,6 +109,10 @@ double* stateFromKeplerian(double sma, double ecc, double inc, double raan, doub
         y0[i+3] = ECI_vel[i];
     }
     return y0;
+}
+
+void freemem(void* ptr) {
+    free(ptr);
 }
 
 #endif
