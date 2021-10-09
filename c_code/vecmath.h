@@ -99,6 +99,7 @@ void ECI2ECEF(double jd, double (*matrix)[3]) {
     // Get Earth rotation angle given time using Celest algorithm.
     // https://github.com/JaiWillems/Celest/blob/develop-v0.2.0/celest/satellite/coordinate.py
     double ERA = -fmod(6.30038748702467 * (jd - 2451545) + 4.895, 2*PI);
+    //printf("ERA: %f\n", ERA * 180 / PI);
 
     matrix[0][0] = cos(ERA);
     matrix[0][1] = -sin(ERA);
@@ -110,7 +111,7 @@ void ECI2ECEF(double jd, double (*matrix)[3]) {
 
     matrix[2][0] = 0;
     matrix[2][1] = 0;
-    matrix[2][2] = 0;
+    matrix[2][2] = 1;
 
 }
 
@@ -129,7 +130,7 @@ void ECEF2ECI(double jd, double (*matrix)[3]) {
 
     matrix[2][0] = 0;
     matrix[2][1] = 0;
-    matrix[2][2] = 0;
+    matrix[2][2] = 1;
 
 }
 
@@ -166,6 +167,9 @@ void printMatrix(double (*matrix)[3]) {
     for (int i = 0; i < 3; i++) {
         printf("[%f, %f, %f]\n", matrix[0][i], matrix[1][i], matrix[2][i]);
     }
+}
+void printMagVec(double vec[3]) {
+    printf("%f\n", sqrt(vec[0]*vec[0] + vec[1]*vec[1] + vec[2]*vec[2]));
 }
 
 #endif

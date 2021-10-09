@@ -7,7 +7,6 @@
 #define H0810 60 // initial step
 #define H01012 200 // initial step
 #include <stdlib.h>
-#include <stdio.h>
 #include <math.h>
 #include "constants.h"
 
@@ -171,9 +170,9 @@ solution* RK1012vec(void (*f)(double, double[], double*), double tSpan[2], doubl
         //// Step size adjustment
         // Determine new step size
         h_old = h;
-        if (err == 0) h *= 1.1; // if error is too small to be detected, increase step size
-        else h = 0.9 * h * pow(ATOL/err, 1.0/11.0); // next step size (based on eleventh order local error)
-
+        if (err == 0) h *= 1.2; // if error is too small to be detected, increase step size
+        else  h = 0.9 * h * pow(ATOL/err, 1.0/11.0); // next step size (based on eleventh order local error)
+        
         if (err < ATOL) {
             /// step within tolerance, append solution
             // check array size and increase size if needed

@@ -78,24 +78,26 @@ void JGM_gravity(double t, double r[3], double accel[3]) {
 
     // m = 0 accelerations
     for (int n = 0; n < JGM3SIZE; n++) {
-        accel[0] += GM / (R_e * R_e) * (-CS[n][0] * V[n+1][1]);
-        accel[1] += GM / (R_e * R_e) * (-CS[n][0] * W[n+1][1]);
-
-        accel[2] += GM / (R_e * R_e) * ((n+1) * (-CS[n][0] * V[n+1][0]));
+        accel[0] += GMdivREsq * (-CS[n][0] * V[n+1][1]);
+        accel[1] += GMdivREsq * (-CS[n][0] * W[n+1][1]);
+        accel[2] += GMdivREsq * ((n+1) * (-CS[n][0] * V[n+1][0]));
         // other term with W[n+1][0] removed since these are equally zero
     }
+    // printf("Base: ");
+    // printMagVec(accel);
+
 
     // m > 0 accelerations
     for (int m = 1; m < JGM3SIZE; m++) {
         for (int n = m; n < JGM3SIZE; n++) {
-            accel[0] += GM / (R_e * R_e) * 0.5 * ((-CS[n][m] * V[n+1][m+1] - CS[m-1][n] * W[n+1][m+1]) + factorials[n][m] * (CS[n][m] * V[n+1][m-1] + CS[m-1][n] * W[n+1][m-1]));
-            accel[1] += GM / (R_e * R_e) * 0.5 * ((-CS[n][m] * W[n+1][m+1] + CS[m-1][n] * V[n+1][m+1]) + factorials[n][m] * (-CS[n][m] * W[n+1][m-1] + CS[m-1][n] * V[n+1][m-1]));
+            accel[0] += GMdivREsq * 0.5 * ((-CS[n][m] * V[n+1][m+1] - CS[m-1][n] * W[n+1][m+1]) + factorials[n][m] * (CS[n][m] * V[n+1][m-1] + CS[m-1][n] * W[n+1][m-1]));
+            accel[1] += GMdivREsq * 0.5 * ((-CS[n][m] * W[n+1][m+1] + CS[m-1][n] * V[n+1][m+1]) + factorials[n][m] * (-CS[n][m] * W[n+1][m-1] + CS[m-1][n] * V[n+1][m-1]));
 
-            accel[2] += GM / (R_e * R_e) * ((n-m+1) * (-CS[n][m] * V[n+1][m] - CS[m-1][n] * W[n+1][m]));
+            accel[2] += GMdivREsq * ((n-m+1) * (-CS[n][m] * V[n+1][m] - CS[m-1][n] * W[n+1][m]));
         }
     }
-
-    //printVec(accel);
+    // printf("Extra: ");
+    // printMagVec(accel);
 
     free(V);
     free(W);

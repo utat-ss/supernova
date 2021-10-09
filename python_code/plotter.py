@@ -58,4 +58,4 @@ def plot_error(diff: np.ndarray):
 
 
 if __name__ == "__main__":
-    plot_trajectory("c_code/RK810.csv", "c_code/RK1012.csv")
+    plot_trajectory("c_code/simplified.csv", "c_code/advanced.csv")
