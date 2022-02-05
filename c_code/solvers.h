@@ -58,6 +58,9 @@ solution* RK810vec(void (*f)(double, double[], double*), double tSpan[2], double
     while (t-h < tSpan[1]) {
         for (int j = 0; j < VEC_SIZE; j++) y_curr[j] = result->y[step][j]; // get current y (for vectorization purposes)
 
+        // Break if magnitude of vector is less than 6378 km (surface impact)
+        if (sqrt(pow(y_curr[0], 2) + pow(y_curr[1], 2) + pow(y_curr[2], 2)) < 6.378e6) break;
+
         f(t, y_curr, k[0]); // RK Stage 0
 
         // Perform all RK Stages [1, s)
@@ -149,6 +152,9 @@ solution* RK1012vec(void (*f)(double, double[], double*), double tSpan[2], doubl
     /////// INTEGRATION STEPS
     while (t-h < tSpan[1]) {
         for (int j = 0; j < VEC_SIZE; j++) y_curr[j] = result->y[step][j]; // get current y (for vectorization purposes)
+
+        // Break if magnitude of vector is less than 6378 km (surface impact)
+        if (sqrt(pow(y_curr[0], 2) + pow(y_curr[1], 2) + pow(y_curr[2], 2)) < 6.378e6) break;
 
         f(t, y_curr, k[0]); // RK Stage 0
 

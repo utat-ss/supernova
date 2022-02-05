@@ -1,6 +1,6 @@
 from ctypes import CDLL, POINTER, c_double, c_int, c_char_p, Structure
-from comparison import compare_propagators, get_orbit
 import numpy as np
+from plotter import plot_from_array
 
 '''
 Code Responsible for Loading C Library
@@ -41,23 +41,20 @@ state = wrap_func(supernova, "stateFromKeplerian", POINTER(c_double),
 
 
 if __name__ == "__main__":
-    # compare_propagators(orbit, 10)
-    days = 10
-    # orb = get_orbit()
+    days = 50
 
     py_tSpan = [0, 86400 * days]
     tSpan = (c_double * len(py_tSpan))(*py_tSpan)
 
-    # py_y0 = [*(orb.r.value*1000), *(orb.v.value*1000)]
-    py_y0 = [-4749231.102296294, -4975106.82469687, 0.0, -719.6538503589323, 686.980716081442, 7561.282735263496]
+    state: POINTER(c_double) = state(6378e3+270e3, 0, 97 * np.pi/180, 0, 0, 0)
+    solution: POINTER(AdaptiveSolution) = orbit("RK810".encode("utf-8"), "advanced".encode("utf-8"), tSpan, state, 1e-6)
 
-    y0 = (c_double * len(py_y0))(*py_y0)
-
-    solution: POINTER(AdaptiveSolution) = orbit("RK810".encode("utf-8"), "simplified".encode("utf-8"), tSpan, y0, 1e-12)
+    # py_y0 = [-4749231.102296294, -4975106.82469687, 0.0, -719.6538503589323, 686.980716081442, 7561.282735263496]
+    # y0 = (c_double * len(py_y0))(*py_y0)
 
     n = solution[0].n  # Dereference pointer
     print(f"Steps taken: {n}")
     t = np.ctypeslib.as_array(solution[0].t, shape=(n,))
     y = np.ctypeslib.as_array(solution[0].y, shape=(n, 6))
-    print(t)
-    print(y)
+    initial_state = np.ctypeslib.as_array(state, shape=(6,))
+    plot_from_array(t, y)
