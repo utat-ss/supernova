@@ -89,21 +89,26 @@ def RK1012_step(f, y, t, h) -> "tuple(np.array, float)":
     RK1012 is a 12th order method with embedded 10th order method
     consisting of 25 explicit stages.
     '''
-    vk = np.zeros((25, len(y)))  # Intermediate solutions
-    Fk = np.zeros((25, len(y)))  # Intermediate derivatives
+    y_i = np.zeros((25, len(y)))  # Intermediate solutions
+    k = np.zeros((25, len(y)))  # Intermediate derivatives
 
-    for stage in range(25):
-        # TODO: check this
+    # RK Stage 0
+    y_i[0, :] = y
+    k[0, :] = f(t, y)
+
+    for stage in range(1, 25):
+        # Generate Input y_i
+        for w in range(stage):
+            y_i[stage, :] += h * A[stage, w] * k[w, :]
+
         # Compute intermediate derivatives
-        Fk[stage, :] = f(t + C[stage]*h, y)
-
-        # Compute intermediate solutions (vectorized)
-        vk[stage, :] = y + h*np.dot(A[stage, :], Fk[:stage, :])
+        k[stage, :] = f(t + C[stage] * h, y_i[stage, :])
 
     # Compute error estimate
     # use only the first 3 elements of the vector (position error)
     # error estimate is given by (49/640) *  h  * (Fk[1]-Fk[23])
-    err = np.linalg.norm((49/640) * h * (Fk[1, :] - Fk[23, :]))
-    y += h*np.dot(B, Fk)
+    err = np.linalg.norm((49/640) * h * (k[1, :] - k[23, :]))
+    for w in range(24):
+        y += h * B[w] * k[w, :]
 
     return y, err

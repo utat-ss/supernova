@@ -21,4 +21,4 @@ arrA = np.loadtxt("new_python/rk1210.txt", skiprows=62, max_rows=300)
 # construct the sparse matrix
 A = coo_matrix((arrA[:, 2],
                (arrA[:, 0].astype(int),
-                arrA[:, 1].astype(int))), shape=(25, 25))
+                arrA[:, 1].astype(int))), shape=(25, 25)).toarray()
