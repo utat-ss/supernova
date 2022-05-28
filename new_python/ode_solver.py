@@ -54,7 +54,7 @@ def RK1012_solve(f: Callable, y0: np.array, t_span: np.array,
     time_start = perf_counter()
 
     while (t_jd[step] < t_span[1]):
-        yi, err = RK1012_step(f, y[step, :], t_jd[step], h)
+        yi, err = RK1012_step(f, y[step, :], t_seconds[step], h)
         
         # Check error tolerance to determine accept/reject step
         if err < etol:
@@ -75,6 +75,10 @@ def RK1012_solve(f: Callable, y0: np.array, t_span: np.array,
         # prevent division by zero
         h *= (0.9 * (etol/err)**(1/12) if err != 0 else 2.0)
 
+        if (t_jd[step] + h/86400) > t_span[1]:
+            h = (t_span[1] - t_jd[step])*86400
+        # prevent going over the end of the time span
+
     # Trim solution array
     y = np.resize(y, (step+1, y.shape[1]))
     t_seconds = np.resize(t_seconds, (step+1))
@@ -82,7 +86,8 @@ def RK1012_solve(f: Callable, y0: np.array, t_span: np.array,
 
     elapsed_time = perf_counter() - time_start
 
-    return PropagatorSolution(t_jd, y, elapsed_time)
+    # Transpose solution to match scipy.integrate
+    return PropagatorSolution(t_jd, y.T, elapsed_time)
 
 
 def RK1012_step(f, y, t, h) -> "tuple(np.array, float)":
@@ -100,8 +105,37 @@ def RK1012_step(f, y, t, h) -> "tuple(np.array, float)":
 
     # Compute error estimate
     err = abs(np.linalg.norm((49/640) * h * (k[1, :] - k[23, :])))
-    
+
     return y + h * RK1012B @ k, err
+
+def RK1012_fixed_step(f: Callable, y0: np.array, t_span: np.array,
+                      etol: float, h: float = 50) -> PropagatorSolution:
+    '''
+    Solves using a fixed step size, for error analysis
+    '''
+    time_start = perf_counter()
+    
+    if t_span[0] > t_span[1]:
+        raise ValueError('t_span must be increasing')
+
+    n = ceil((t_span[1]-t_span[0])*86400/h) + 1
+    y = np.zeros((n, len(y0)))
+    y[0, :] = y0
+
+    t_seconds = np.zeros(y.shape[0])
+    t_jd = np.zeros(y.shape[0])
+    t_jd[0] = t_span[0]
+
+    for step in range(n-1):
+        yi, _ = RK1012_step(f, y[step, :], t_seconds[step], h)
+        y[step+1, :] = yi
+        t_seconds[step+1] = t_seconds[step] + h
+        t_jd[step+1] = t_jd[step] + h/86400
+
+    elapsed_time = perf_counter() - time_start
+
+    return PropagatorSolution(t_jd, y.T, elapsed_time)
+
 
 def RK4_solve(f: Callable, y0: np.array, t_span: np.array,
              etol: float, h: float = 50):
@@ -139,11 +173,11 @@ def RK4_solve(f: Callable, y0: np.array, t_span: np.array,
     t_jd[0] = t_span[0]
 
     for step in range(n-1):
-        y[step+1, :] = RK4_step(f, y[step, :], t_jd[step], h)
+        y[step+1, :] = RK4_step(f, y[step, :], t_seconds[step], h)
         t_seconds[step+1] = t_seconds[step] + h
         t_jd[step+1] = t_jd[step] + h/86400
 
-    return (t_seconds, y)
+    return (t_seconds, y.T)
 
 def RK4_step(f, y, t, h) -> np.array:
     '''
@@ -154,4 +188,3 @@ def RK4_step(f, y, t, h) -> np.array:
         k[stage, :] = f(t + h * RK4C[stage],
                         y + h * RK4A[stage, :stage] @ k[:stage, :])
     return y + h * RK4B @ k
- 
