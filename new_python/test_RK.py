@@ -79,7 +79,7 @@ def test_analytical():
 
 def h_convergence():
     # Test error convergence for h
-    hs = 10 / np.arange(1, 30)
+    hs = 10 / np.arange(4, 30)
     y0 = [1]
     t_span = [0, 100/86400]
     err = []
@@ -87,6 +87,9 @@ def h_convergence():
     for h in hs:
         sol_1012 = RK1012_fixed_step(f_cos, y0, t_span, 1e-4, h)
         err.append(abs(sol_1012.y[0, -1] - np.cos(100)))
+
+    # fit log-log slope
+    fit = np.polyfit(np.log(hs), np.log(err), 1)
 
     # log-log plot of error convergence
     plt.loglog(hs, err)
@@ -96,12 +99,26 @@ def h_convergence():
     plt.grid()
     plt.show()
 
-    # fit log-log slope
-    fit = np.polyfit(np.log(hs), np.log(err), 1)
-    print(fit)
+def test_cos():
+    # Test error convergence for h
+    hs = [10/3, 2.5, 1, 0.1]
+    y0 = [1]
+    t_span = [0, 10/86400]
+
+    for h in hs:
+        sol_1012 = RK1012_fixed_step(f_cos, y0, t_span, 1e-4, h)
+        plt.plot(sol_1012.t, sol_1012.y[0, :], label=f"h={h}")
+
+    plt.xlabel("Time (s)")
+    plt.ylabel("y(t)")
+    plt.legend()
+    plt.title("RK1012 Instability for cos(t) solution")
+    plt.grid()
+    plt.show()
     
 
 if __name__ == "__main__":
-    # test_SHM()
-    # test_analytical()
+    test_SHM()
+    test_analytical()
     h_convergence()
+    test_cos()
