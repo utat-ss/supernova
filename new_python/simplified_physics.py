@@ -17,7 +17,7 @@ def J2_gravity(t: float, y: np.array) -> np.array:
     a_g = -GM/r_3 * position  # acceleration due to GM/r^2
     a_J2 = -J2 * r_3 * np.cross(position, position)  # acceleration due to J2
 
-    return a_g + a_J2
+    return np.concatenate((y[3:], a_J2 + a_g))
 
 
 

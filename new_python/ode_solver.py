@@ -39,7 +39,8 @@ def RK1012_solve(f: Callable, y0: np.array, t_span: np.array,
         raise ValueError('t_span must be increasing')
 
     # Initialize initial solution array
-    n = max(ceil((t_span[1]-t_span[0])*86400/h0), 10)
+    # n = max(ceil((t_span[1]-t_span[0])*86400/h0), 10)
+    n = 10
 
     y = np.zeros((n, len(y0)))
     y[0, :] = y0
