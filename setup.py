@@ -15,8 +15,8 @@ setup(
     packages=["supernova"],
     setup_requires=["cffi>=1.15.0"],
     cffi_modules=["supernova/_builder.py:ffibuilder"],
-    install_requires=["cffi>=1.15.0", "numpy", "matplotlib"],
-    extras_require={"test": ["pytest", "poliastro"], "demo": ["celest"]},
+    install_requires=["cffi>=1.15.0", "numpy>=1.25", "matplotlib>=3.7"],
+    extras_require={"test": ["pytest", "poliastro"]},
     options={"build_ext": {"inplace": True}},
     classifiers=[
         "Development Status :: 3 - Alpha",
@@ -27,5 +27,5 @@ setup(
         "Topic :: Scientific/Engineering :: Physics",
         "Intended Audience :: Science/Research",
     ],
-    python_requires=">=3.8",
+    python_requires=">=3.9",
 )
