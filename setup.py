@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setup(
     name="supernova-cffi",
-    version="1.0.0",
+    version="1.0.1",
     author="Mingde Yin",
     description="Orbit propagation and analysis tool.",
     long_description=long_description,
@@ -15,7 +15,7 @@ setup(
     packages=["supernova"],
     setup_requires=["cffi>=1.15.0"],
     cffi_modules=["supernova/_builder.py:ffibuilder"],
-    install_requires=["cffi>=1.15.0", "numpy>=1.25", "matplotlib>=3.7"],
+    install_requires=["cffi>=1.15.0", "numpy", "matplotlib"],
     extras_require={"test": ["pytest", "poliastro"]},
     options={"build_ext": {"inplace": True}},
     classifiers=[
@@ -27,5 +27,5 @@ setup(
         "Topic :: Scientific/Engineering :: Physics",
         "Intended Audience :: Science/Research",
     ],
-    python_requires=">=3.9",
+    python_requires=">=3.8,<3.11",
 )
